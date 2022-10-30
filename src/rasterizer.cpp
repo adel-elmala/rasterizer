@@ -12,7 +12,6 @@ void processEvents();
 void drawPoint(SDL_Surface *screen, int x, int y, int r, int g, int b);
 void rasterPoints(SDL_Surface *screen, const Vector3 &v);
 
-
 int main(int argc, char *argv[])
 {
 
@@ -35,12 +34,14 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    // but instead of creating a renderer, we can draw directly to the screen
+    // // but instead of creating a renderer, we can draw directly to the screen
     SDL_Surface *screen = SDL_GetWindowSurface(window);
+    // SDL_Surface *screen = NULL;
+    // Vector3 tp1 = Vector3(-49.0, -49.0, 0.0);
     Vector3 tp1 = Vector3(40.0,0.0,0.0);
     Vector3 tp2 = Vector3(40.0,40.0,0.0);
     Vector3 tp3 = Vector3(-40.0,0.0,0.0);
-    rasterPoints(screen,tp1);
+    rasterPoints(screen, tp1);
     rasterPoints(screen,tp2);
     rasterPoints(screen,tp3);
     while (!window_should_close)
@@ -112,9 +113,9 @@ void rasterPoints(SDL_Surface *screen, const Vector3 &vec)
     // 2 - transform to world coord
     //      2.1 - construct the homog. linear trans model-to-world matrix Mw
     Matrix4 Mw;
-    Mw.col1 = Vector4(1.0, 0.0, 0.0, 0.0);
-    Mw.col2 = Vector4(0.0, 1.0, 0.0, 0.0);
-    Mw.col3 = Vector4(0.0, 0.0, 1.0, 0.0);
+    // Mw.col1 = Vector4(1.0, 0.0, 0.0, 0.0);
+    // Mw.col2 = Vector4(0.0, 1.0, 0.0, 0.0);
+    // Mw.col3 = Vector4(0.0, 0.0, 1.0, 0.0);
     Mw.col4 = Vector4(0.0, 0.0, -50.0, 1.0); // translate in the -ve z direction 50 units
 
     //      2.2 - multyply the vertex by Mw : Mw*Vm (now in world coord)
@@ -161,10 +162,12 @@ void rasterPoints(SDL_Surface *screen, const Vector3 &vec)
     // 5 - transform to viewport coord
     //      5.1 - constuct the NDC-to-viewPort matrix Mv: Mv * Mo * Mc * Mm * Vm (now in pixel coord)
     Matrix4 Mv;
+    Matrix4 MvFlipV;
     Mv.col1 = Vector4(nPixelsx / 2, 0.0, 0.0, 0.0);
     Mv.col2 = Vector4(0.0, nPixelsy / 2, 0.0, 0.0);
     Mv.col4 = Vector4((nPixelsx - 1) / 2, (nPixelsy - 1) / 2, 0.0, 1.0);
-    hv = Mv * hv;
+    MvFlipV.col2 = Vector4(0.0, -1.0, 0.0, 0.0);
+    hv = Mv * MvFlipV * hv;
     // 6 - draw pixel with vetrex color
-    drawPoint(screen, hv.m_x, hv.m_y, 255, 0,0);
+    drawPoint(screen, hv.m_x, hv.m_y, 255, 0, 0);
 }

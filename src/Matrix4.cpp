@@ -70,6 +70,7 @@ Matrix4 Matrix4::operator*(const Matrix4 &m2)
 double &Matrix4::operator()(const unsigned int row, const unsigned int col)
 {
     Vector4 *target;
+    double *val;
     switch (col)
     {
 
@@ -98,22 +99,23 @@ double &Matrix4::operator()(const unsigned int row, const unsigned int col)
     {
 
     case 0:
-        return (*target).m_x;
+        val = &(*target).m_x;
         break;
     case 1:
-        return (*target).m_y;
+        val = &(*target).m_y;
         break;
     case 2:
-        return (*target).m_z;
+        val = &(*target).m_z;
         break;
     case 3:
-        return (*target).m_w;
+        val = &(*target).m_w;
         break;
 
     default:
         fprintf(stderr, "Wrong row index: %ud .\n", row);
         break;
     }
+    return *val;
 }
 
 Matrix4 Matrix4::identity()
