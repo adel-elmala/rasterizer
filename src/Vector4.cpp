@@ -20,7 +20,7 @@ Vector4::Vector4(const double a)
     m_z = a;
     m_w = a;
 }
-// copy constructor
+// constructor
 Vector4::Vector4(const Vector3 &v)
 {
     m_x = v.m_x;
@@ -28,8 +28,16 @@ Vector4::Vector4(const Vector3 &v)
     m_z = v.m_z;
     m_w = 0;
 }
+// constructor
+Vector4::Vector4(const Vector3 &v,double w)
+{
+    m_x = v.m_x;
+    m_y = v.m_y;
+    m_z = v.m_z;
+    m_w = w;
+}
 // deconstructor
-Vector3::~Vector3()
+Vector4::~Vector4()
 {
     return;
 }

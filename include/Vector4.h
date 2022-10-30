@@ -24,6 +24,7 @@ public:
     Vector4(const double x, const double y, const double z, const double w);
     // copy constructor
     Vector4(const Vector3 &v);
+    Vector4(const Vector3 &v,double w);
     // deconstructor
     ~Vector4();
     Vector4 operator+(const Vector4 &v2) const; // v + v2
