@@ -61,14 +61,10 @@ inline Vector4 Vector4::operator+(const Vector4 &v2) const
 // v - v2
 inline Vector4 Vector4::operator-(const Vector4 &v2) const
 {
-    if (!((v2.m_w) && m_w)) // allow addition if not both are points
-        return Vector4(m_x - v2.m_x, m_y - v2.m_y, m_z - v2.m_z, v2.m_w + m_w);
+    // if (!((v2.m_w) && m_w)) // allow addition if not both are points
+    return Vector4(m_x - v2.m_x, m_y - v2.m_y, m_z - v2.m_z, v2.m_w + m_w);
 
-    else
-    {
-        fprintf(stderr, "Cannot subtract Points!\n");
-        exit(EXIT_FAILURE);
-    }
+    
 }
 // -v
 inline Vector4 Vector4::operator-() const

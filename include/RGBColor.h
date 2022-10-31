@@ -13,6 +13,7 @@ public:
     RGBColor &operator+(const RGBColor &rhs);
     RGBColor &operator-(const RGBColor &rhs);
     RGBColor &operator*(float rhs);
+    RGBColor &operator*(double rhs);
     void CorrectRange(void);
 
 };

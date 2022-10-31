@@ -55,6 +55,17 @@ RGBColor &RGBColor::operator*(float rhs)
     return *this;
 }
 
+RGBColor &RGBColor::operator*(double rhs)
+{
+    r *= rhs;
+    g *= rhs;
+    b *= rhs;
+    a *= rhs;
+    CorrectRange();
+    return *this;
+}
+
+
 void RGBColor::CorrectRange(void)
 {
     r = r > 1.0f ? 1.0f : r;
