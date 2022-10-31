@@ -6,6 +6,8 @@
 #include "Matrix4.h"
 #include "RGBColor.h"
 
+#include <sys/timeb.h>
+
 struct vertexAttrib
 {
     Vector3 pos;
@@ -28,6 +30,7 @@ struct triangle
 bool window_should_close = false;
 int nPixelsx = 640;
 int nPixelsy = 480;
+double r = 0;
 void processEvents();
 void drawPoint(SDL_Surface *screen, const Vector3 &hVec, int r, int g, int b);
 Vector3 processVertex(const Vector3 &v);
@@ -57,32 +60,26 @@ int main(int argc, char *argv[])
 
     // // but instead of creating a renderer, we can draw directly to the screen
     SDL_Surface *screen = SDL_GetWindowSurface(window);
-    Vector3 tp1 = Vector3(40.0, 0.0, 0.0);
+    Vector3 tp1 = Vector3(30.0, -10.0, 0.0);
     Vector3 tp2 = Vector3(0.0, 40.0, 0.0);
-    Vector3 tp3 = Vector3(-40.0, 0.0, 0.0);
-    // Vector3 tph1 = processVertex(tp1);
-    // Vector3 tph2 = processVertex(tp2);
-    // Vector3 tph3 = processVertex(tp3);
+    Vector3 tp3 = Vector3(-30.0, -10.0, 0.0);
     triangle t;
     t.v1.pos = tp1;
     t.v2.pos = tp2;
     t.v3.pos = tp3;
-    t.v1.col = RGBColor(1.0, 0.0, 0.0);
-    t.v2.col = RGBColor(0.0, 1.0, 0.0);
-    t.v3.col = RGBColor(0.0, 0.0, 1.0);
-    rasterTriangle(screen, t);
-    // drawPoint(screen, tph2, 255, 255, 255);
-    // drawPoint(screen, tph1, 255, 255, 255);
-    // drawPoint(screen, tph3, 255, 255, 255);
+    struct timeb tp;
     while (!window_should_close)
     {
-        processEvents();
+
+        ftime(&tp);
+        r = (sin(tp.millitm / 100) / 2.0) + 0.5;
+        t.v1.col = RGBColor(r, 0.0, 0.0);
+        t.v2.col = RGBColor(0.0, r, 0.0);
+        t.v3.col = RGBColor(0, 0.0, r);
+
+        rasterTriangle(screen, t);
         // update state, draw the current frame
-
-        // color: 0xaaRRGGBB
-        // SDL_FillRect(screen, NULL, 0xff00ff00);
-
-        // drawScreen(screen);
+        processEvents();
 
         // this works just like SDL_Flip() in SDL 1.2
         SDL_UpdateWindowSurface(window);
@@ -130,6 +127,14 @@ void processEvents()
         {
             if (event.key.keysym.sym == SDLK_ESCAPE)
                 window_should_close = true;
+            if (event.key.keysym.sym == SDLK_w)
+            {
+                r = r + 0.01;
+                if (r > 1.0)
+                    r = 0;
+                printf("%f\n", r);
+            }
+
             break;
         }
         }
@@ -145,9 +150,6 @@ Vector3 processVertex(const Vector3 &vec)
     // 2 - transform to world coord
     //      2.1 - construct the homog. linear trans model-to-world matrix Mw
     Matrix4 Mw;
-    // Mw.col1 = Vector4(1.0, 0.0, 0.0, 0.0);
-    // Mw.col2 = Vector4(0.0, 1.0, 0.0, 0.0);
-    // Mw.col3 = Vector4(0.0, 0.0, 1.0, 0.0);
     Mw.col4 = Vector4(0.0, 0.0, -50.0, 1.0); // translate in the -ve z direction 50 units
 
     //      2.2 - multyply the vertex by Mw : Mw*Vm (now in world coord)
@@ -203,20 +205,7 @@ Vector3 processVertex(const Vector3 &vec)
     Vector3 vec_in_screen_coord(hv.m_x, hv.m_y, hv.m_z);
     return vec_in_screen_coord; // the z-coord will be used for z-buffering later
 }
-// double triangleArea(const Vector3 &v1, const Vector3 &v2, const Vector3 &v3)
-// {
-//     Vector3 v2_minus_v1 = v2 - v1;
-//     Vector3 v3_minus_v1 = v3 - v1;
-//     Vector3 t = v2_minus_v1 ^ v3_minus_v1;
-//     double area = t.len();
-//     return area / 2.0;
-// }
-double triangleArea(const Vector3 &v1, const Vector3 &v2, const Vector3 &v3)
-{
-    double area = (v1.m_x * v1.m_y) + (v2.m_x * v3.m_y) + (v3.m_x * v1.m_y) - (v1.m_x * v3.m_y) - (v2.m_x * v1.m_y) - (v3.m_x * v2.m_y);
 
-    return area / 2.0;
-}
 double implicit_2d_line_eq(const Vector3 &p1, const Vector3 &p2, const Vector3 &v)
 {
     return ((p1.m_y - p2.m_y) * v.m_x + (p2.m_x - p1.m_x) * v.m_y + (p1.m_x * p2.m_y) - (p2.m_x * p1.m_y));
@@ -248,10 +237,6 @@ void rasterTriangle(SDL_Surface *screen, const triangle &t)
     y_min = y_min < t_in_screen_space.v2.pos.m_y ? y_min : t_in_screen_space.v2.pos.m_y;
     y_min = y_min < t_in_screen_space.v3.pos.m_y ? y_min : t_in_screen_space.v3.pos.m_y;
 
-    // double t_area = triangleArea(t_in_screen_space.v1.pos,
-    //                              t_in_screen_space.v2.pos,
-    //                              t_in_screen_space.v3.pos);
-
     for (int y = y_min; y <= y_max; ++y)
     {
         for (int x = x_min; x <= x_max; ++x)
@@ -263,32 +248,14 @@ void rasterTriangle(SDL_Surface *screen, const triangle &t)
 
             double gamma = implicit_2d_line_eq(t_in_screen_space.v1.pos, t_in_screen_space.v2.pos, p) / implicit_2d_line_eq(t_in_screen_space.v1.pos, t_in_screen_space.v2.pos, t_in_screen_space.v3.pos);
 
-            // double t_alpha = triangleArea(t_in_screen_space.v1.pos,
-            //                               t_in_screen_space.v2.pos,
-            //                               p);
-
-            // double t_beta = triangleArea(t_in_screen_space.v2.pos,
-            //                              t_in_screen_space.v3.pos,
-            //                              p);
-
-            // double t_gamma = triangleArea(t_in_screen_space.v3.pos,
-            //                               t_in_screen_space.v1.pos,
-            //                               p);
-            // double alpha = t_alpha / t_area;
-            // double beta = t_beta / t_area;
-            // double gamma = t_gamma / t_area;
-
             if ((alpha >= 0) && (beta >= 0) && (gamma >= 0))
             {
-                // printf("in\n");
                 RGBColor c = ((RGBColor(t_in_screen_space.v1.col)) * alpha) +
                              (RGBColor((t_in_screen_space.v2.col)) * beta) +
                              (RGBColor((t_in_screen_space.v3.col)) * gamma);
                 drawPoint(screen, p, int(c.r * 255), int(c.g * 255), int(c.b * 255));
-                // drawPoint(screen, p, 255, 0, 0);
             }
-            // drawPoint(screen, p, 255, 0,0);
         }
     }
-    printf("done\n");
+    // printf("done\n");
 }
