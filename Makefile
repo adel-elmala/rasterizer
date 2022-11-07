@@ -11,3 +11,6 @@ SRC = ./src/rasterizer.cpp \
 	./src/RGBColor.cpp 
 rasterizer:
 	$(CC) $(CFLAGS) $(INCLUDE) $(SRC) -o ./bin/$@ $(LIBS)
+
+modelTest:
+	g++ -w -g $(INCLUDE) ./src/modelTest.cpp -o ./bin/$@ 

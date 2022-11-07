@@ -127,14 +127,6 @@ void processEvents()
         {
             if (event.key.keysym.sym == SDLK_ESCAPE)
                 window_should_close = true;
-            if (event.key.keysym.sym == SDLK_w)
-            {
-                r = r + 0.01;
-                if (r > 1.0)
-                    r = 0;
-                printf("%f\n", r);
-            }
-
             break;
         }
         }

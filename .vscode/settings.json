@@ -4,6 +4,19 @@
             "cwd": "/media/adel/1E9A1F939A1F6695/cs-path/gameDev/computerGraphics/rasterizer/bin",
             "binaryPath": "/media/adel/1E9A1F939A1F6695/cs-path/gameDev/computerGraphics/rasterizer/bin/rasterizer",
             "binaryArgs": []
+        },
+        {
+            "cwd": "/media/adel/1E9A1F939A1F6695/cs-path/gameDev/computerGraphics/rasterizer/bin",
+            "binaryPath": "/media/adel/1E9A1F939A1F6695/cs-path/gameDev/computerGraphics/rasterizer/bin/plyTest",
+            "binaryArgs": []
+        },
+        {
+            "cwd": "/media/adel/1E9A1F939A1F6695/cs-path/gameDev/computerGraphics/rasterizer/bin",
+            "binaryPath": "/media/adel/1E9A1F939A1F6695/cs-path/gameDev/computerGraphics/rasterizer/bin/modelTest",
+            "binaryArgs": []
         }
-    ]
+    ],
+    "files.associations": {
+        "objparser.h": "c"
+    }
 }
