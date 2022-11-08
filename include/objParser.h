@@ -28,12 +28,6 @@ struct vertexAttrib
     RGBColor col;
 };
 
-struct line
-{
-    vertexAttrib p1;
-    vertexAttrib p2;
-};
-
 struct triangle
 {
     vertexAttrib v1;
@@ -43,7 +37,7 @@ struct triangle
 
 class objParser
 {
-private:
+public:
     unsigned int nVerts;
     unsigned int nNorms;
     unsigned int nFaces;
@@ -52,6 +46,7 @@ private:
     std::vector<Vertex> verticies;
     std::vector<Normal> normals;
     std::vector<FaceIndicies> FaceIdx;
+    std::vector<triangle> triangles;
 
 public:
     objParser(const char *pathname);
@@ -60,6 +55,7 @@ public:
     char *processVLine(char *lineStart);
     char *processVnLine(char *lineStart);
     char *processFLine(char *lineStart);
+    void formTriangles(void);
 };
 
 void objParser::ReadFile(const char *pathname)
@@ -169,20 +165,6 @@ char *objParser::processFLine(char *lineStart)
             tokenEnd++;
             continue;
         }
-        // char *peek = tokenStart;
-        // if (*tokenStart == '/')
-        // {
-        //     int afterVal = isdigit(*(++peek));
-        //     peek = tokenStart;
-        //     int beforeVal = isdigit(*(--peek));
-        //     if (!(afterVal & beforeVal)) // bitwise And then logical not
-        //     {
-        //         ids[i] = 0;
-        //         i++;
-        //         tokenEnd = ++(++tokenStart);
-        //         continue;
-        //     }
-        // }
 
         while ((*tokenEnd != ' ') && (*tokenEnd != '\n') && (*tokenEnd != '\0'))
             tokenEnd++;
@@ -219,11 +201,37 @@ objParser::objParser(const char *filePath)
             current = processFLine(current);
         peek = current;
     }
+    formTriangles();
 }
 
 objParser::~objParser()
 {
     free(fileBuffer);
+}
+
+void objParser::formTriangles(void)
+{
+    for (auto face : FaceIdx)
+    {
+        triangle t;
+        t.v1.pos = Vector3(verticies[(face.v1) - 1].x,
+                           verticies[(face.v1) - 1].y,
+                           verticies[(face.v1) - 1].z);
+        t.v1.col = RGBColor(0.4f, 0.3f, 0.1f);
+
+
+        t.v2.pos = Vector3(verticies[(face.v2) - 1].x,
+                           verticies[(face.v2) - 1].y,
+                           verticies[(face.v2) - 1].z);
+        t.v2.col = RGBColor(0.1f, 0.9f, 0.4f);
+
+
+        t.v3.pos = Vector3(verticies[(face.v3) - 1].x,
+                           verticies[(face.v3) - 1].y,
+                           verticies[(face.v3) - 1].z);
+        t.v3.col = RGBColor(0.7f, 0.7f, 0.8f);
+        triangles.push_back(t);
+    }
 }
 
 #endif

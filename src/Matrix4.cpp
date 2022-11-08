@@ -20,7 +20,7 @@ Matrix4 Matrix4::operator*(const double c)
     tmp.col1 = col1 * c;
     tmp.col2 = col2 * c;
     tmp.col3 = col3 * c;
-    tmp.col4 = col4 * c;
+    // tmp.col4 = col4 * c;
     // for (int i = 0; i < 9; ++i)
     //     tmp.data[i] = data[i] * c;
 
