@@ -28,28 +28,6 @@ void drawPoint(SDL_Surface *screen, const Vector3 &hVec, int r, int g, int b)
     // SDL_UnlockSurface(screen);
 }
 
-void processEvents()
-{
-    SDL_Event event;
-    while (SDL_PollEvent(&event))
-    {
-        switch (event.type)
-        {
-        case SDL_QUIT:
-        {
-            window_should_close = true;
-            break;
-        }
-        case SDL_KEYDOWN:
-        {
-            if (event.key.keysym.sym == SDLK_ESCAPE)
-                window_should_close = true;
-            break;
-        }
-        }
-    }
-}
-
 double implicit_2d_line_eq(const Vector3 &p1, const Vector3 &p2, const Vector3 &v)
 {
     return ((p1.m_y - p2.m_y) * v.m_x + (p2.m_x - p1.m_x) * v.m_y + (p1.m_x * p2.m_y) - (p2.m_x * p1.m_y));
@@ -260,8 +238,8 @@ void constructCamMat(Matrix4 &Mc, Vector3 eye, Vector3 gazeDir, Vector3 up)
     Mcam.col2 = Vector4(u.m_y, v.m_y, w.m_y, 0.0);
     Mcam.col3 = Vector4(u.m_z, v.m_z, w.m_z, 0.0);
     Mcam.col4 = Vector4(0.0, 0.0, 0.0, 1.0);
-    Mct.col4 = Vector4(-eye.m_x, -eye.m_x, -eye.m_x, 1.0);
-    Mc = Mc * Mct;
+    Mct.col4 = Vector4(-eye.m_x, -eye.m_y, -eye.m_z, 1.0);
+    Mc = Mcam * Mct;
 }
 
 void constructNDCMat(Matrix4 &Mndc, view_volume_bounds vvb, bool prespective)
@@ -310,7 +288,7 @@ void constructViewPortMat(Matrix4&Mvp,unsigned int winWidth,unsigned int winHeig
 void init_Model_to_screen_mat()
 {   view_volume_bounds vvbInit;
     constructWorldMat(Mw,Vector3(1.0),Vector3(0.0,0.0,-120.0),0.0);
-    constructCamMat(Mc,Vector3(0.0),Vector3(0.0,0.0,-1.0),Vector3(1.0,0.0,0.0));
+    constructCamMat(Mc,Vector3(0.0),Vector3(0.0,0.0,-1.0),Vector3(0.0,1.0,0.0));
     constructNDCMat(Mndc,vvbInit,true);
     constructViewPortMat(Mvp,nPixelsx,nPixelsy);
     M_model_screen = Mvp*Mndc*Mc*Mw;
