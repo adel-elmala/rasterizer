@@ -70,20 +70,16 @@ int main(int argc, char *argv[])
     // rasterTriangle(screen, t);
 
     objParser parser("./objFiles/cube.obj");
-    fprintf(stdout, "done\n");
+    fprintf(stdout, "OBJ PARSER: done\n");
 
     for (const auto t : parser.triangles)
     {
         // rasterTriangle(screen,t);
         rasterWireFrameTriangle(screen, t);
-        // pretty_print(t);
     }
     while (!window_should_close)
     {
-        // rasterTriangle(screen, t);
-
-        // rasterWireFrameTriangle(screen,t);
-
+     
         // update state, draw the current frame
         processEvents();
 
