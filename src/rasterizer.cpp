@@ -1,96 +1,11 @@
-#include "SDL.h"
-#include <stdio.h>
-#include <math.h>
-#include "Vector3.h"
-#include "Vector4.h"
-#include "Matrix4.h"
-#include "RGBColor.h"
-#include "objParser.h"
-#include <sys/timeb.h>
+#include "rasterizer.h"
 
-bool window_should_close = false;
-int nPixelsx = 640;
-int nPixelsy = 480;
-double r = 0;
+extern bool window_should_close;
+extern int nPixelsx;
+extern int nPixelsy;
+Matrix4 Mw,Mc,Mndc,Mvp,M_model_screen;
 
-void pretty_print(triangle t);
-void processEvents();
-void drawPoint(SDL_Surface *screen, const Vector3 &hVec, int r, int g, int b);
-Vector3 processVertex(const Vector3 &v);
-void rasterTriangle(SDL_Surface *screen, const triangle &t);
-void rasterWireFrameTriangle(SDL_Surface *screen, const triangle &t);
 
-int main(int argc, char *argv[])
-{
-
-    SDL_Window *window;
-
-    SDL_Init(SDL_INIT_VIDEO);
-
-    window = SDL_CreateWindow(
-        "Rasterizer",            // window title
-        SDL_WINDOWPOS_UNDEFINED, // initial x position
-        SDL_WINDOWPOS_UNDEFINED, // initial y position
-        nPixelsx,                // width, in pixels
-        nPixelsy,                // height, in pixels
-        SDL_WINDOW_OPENGL        // flags - see below
-    );
-
-    if (window == NULL)
-    {
-        printf("Could not create window: %s\n", SDL_GetError());
-        return 1;
-    }
-
-    // // but instead of creating a renderer, we can draw directly to the screen
-    SDL_Surface *screen = SDL_GetWindowSurface(window);
-    Vector3 tp1 = Vector3(1.0, 1.0, 0.0);
-    Vector3 tp2 = Vector3(1.0, -1.0, 0.0);
-    Vector3 tp3 = Vector3(-1.0, -1.0, 0.0);
-    triangle t;
-    t.v1.pos = tp1;
-    t.v2.pos = tp2;
-    t.v3.pos = tp3;
-    t.v1.col = RGBColor(1.0, 0.0, 0.0);
-    t.v2.col = RGBColor(0.0, 1.0, 0.0);
-    t.v3.col = RGBColor(0, 0.0, 1.0);
-
-    Vector3 t2p1 = Vector3(1.0, 1.0, 0.0);
-    Vector3 t2p2 = Vector3(-1.0, -1.0, 0.0);
-    Vector3 t2p3 = Vector3(-1.0, 1.0, 0.0);
-    triangle t2;
-    t2.v1.pos = t2p1;
-    t2.v2.pos = t2p2;
-    t2.v3.pos = t2p3;
-    t2.v1.col = RGBColor(1.0, 0.0, 0.0);
-    t2.v2.col = RGBColor(0.0, 1.0, 0.0);
-    t2.v3.col = RGBColor(0, 0.0, 1.0);
-    // rasterWireFrameTriangle(screen, t);
-    // rasterWireFrameTriangle(screen, t2);
-    // rasterTriangle(screen, t);
-
-    objParser parser("./objFiles/cube.obj");
-    fprintf(stdout, "OBJ PARSER: done\n");
-
-    for (const auto t : parser.triangles)
-    {
-        // rasterTriangle(screen,t);
-        rasterWireFrameTriangle(screen, t);
-    }
-    while (!window_should_close)
-    {
-     
-        // update state, draw the current frame
-        processEvents();
-
-        // this works just like SDL_Flip() in SDL 1.2
-        SDL_UpdateWindowSurface(window);
-    }
-
-    SDL_DestroyWindow(window);
-    SDL_Quit();
-    return 0;
-}
 
 void drawPoint(SDL_Surface *screen, const Vector3 &hVec, int r, int g, int b)
 {
@@ -133,81 +48,6 @@ void processEvents()
         }
         }
     }
-}
-
-Vector3 processVertex(const Vector3 &vec)
-{
-    // 1 - read vertex in model coordinates. Vm
-    //      1.1 read 3d coord then transform to 4d
-    Vector4 hv(vec, 1.0);
-
-    // 2 - transform to world coord
-    //      2.1 - construct the homog. linear trans model-to-world matrix Mw
-    Matrix4 Mw;
-    Mw.col4 = Vector4(0.0, 0.0, -50.0, 1.0); // translate in the -ve z direction 50 units
-    Matrix4 Ms;
-    Ms = Ms *0.5;
-
-    //      2.2 - multyply the vertex by Mw : Mw*Vm (now in world coord)
-    hv = Mw * Ms * hv;
-    // 3 - transform to camera coord
-    //      3.1 - constuct the camera coord sys, u,v,w & e
-    Vector3 e = Vector3(0.0); // camera eye at world origin
-    // Vector3 e = Vector3(0.0,0.0,0.0); // camera eye at world origin
-
-    Vector3 cameraGazeDir = Vector3(0.0, 0.0, -1.0); // -z dir
-    Vector3 cameraUpDir = Vector3(0.0, 1.0, 0.0);    // y dir
-    Vector3 w = (-cameraGazeDir);
-    w.normalize(); // done
-    Vector3 v = cameraUpDir;
-    v.normalize();
-    Vector3 u = (v ^ w);
-    u.normalize(); // done
-    v = (w ^ u).hat();
-
-    //      3.2 - consturct the world-to-camera matrix Mc
-    Matrix4 Mc;
-    Matrix4 Mct;
-    Mc.col1 = Vector4(u.m_x, v.m_x, w.m_x, 0.0);
-    Mc.col2 = Vector4(u.m_y, v.m_y, w.m_y, 0.0);
-    Mc.col3 = Vector4(u.m_z, v.m_z, w.m_z, 0.0);
-    Mc.col4 = Vector4(0.0, 0.0, 0.0, 1.0);
-    Mct.col4 = Vector4(-e.m_x, -e.m_x, -e.m_x, 1.0);
-    Mc = Mc * Mct;
-    //      3.3 - multyply the vertex by Mx : Mc*Mw*Vm (now in cam coord)
-    hv = Mc * hv;
-
-    // 4 - trasnform to NDC
-    //      4.1 - using orthographic projection , define the orthographic volume (i.e : l,r,t,b,n,f) , but skip clipping for now
-    double l = -50, r = 50;
-    double t = 50, b = -50;
-    double n = -50, f = -150;
-
-    //      4.2 - constuct the ortho.g. matrix Mo (camera-to-NDC): Mo * Mc * Mm * Vm (now in NDC coord)
-    Matrix4 Mo;
-    Mo.col1 = Vector4(2.0 / (r - l), 0.0, 0.0, 0.0);
-    Mo.col2 = Vector4(0.0, 2.0 / (t - b), 0.0, 0.0);
-    Mo.col3 = Vector4(0.0, 0.0, 2.0 / (n - f), 0.0);
-    Mo.col4 = Vector4(-(r + l) / (r - l), -(t + b) / (t - b), -(n + f) / (n - f), 1.0);
-    Matrix4 Mp;
-    Mp.col1 = Vector4(n, 0.0, 0.0, 0.0);
-    Mp.col2 = Vector4(0.0, n, 0.0, 0.0);
-    Mp.col3 = Vector4(0.0, 0.0, (n + f), 1.0);
-    Mp.col4 = Vector4(0, 0, -(f * n), 0.0);
-
-    hv = Mo * Mp * hv;
-    // 5 - transform to viewport coord
-    //      5.1 - constuct the NDC-to-viewPort matrix Mv: Mv * Mo * Mc * Mm * Vm (now in pixel coord)
-    Matrix4 Mv;
-    Matrix4 MvFlipV;
-    Mv.col1 = Vector4(nPixelsx / 2, 0.0, 0.0, 0.0);
-    Mv.col2 = Vector4(0.0, nPixelsy / 2, 0.0, 0.0);
-    Mv.col4 = Vector4((nPixelsx - 1) / 2, (nPixelsy - 1) / 2, 0.0, 1.0);
-    MvFlipV.col2 = Vector4(0.0, -1.0, 0.0, 0.0);
-    hv = Mv * MvFlipV * hv;
-    // Vector3 vec_in_screen_coord(hv.m_x , hv.m_y, hv.m_z);
-    Vector3 vec_in_screen_coord(hv.m_x / hv.m_w, hv.m_y / hv.m_w, hv.m_z / hv.m_w);
-    return vec_in_screen_coord; // the z-coord will be used for z-buffering later
 }
 
 double implicit_2d_line_eq(const Vector3 &p1, const Vector3 &p2, const Vector3 &v)
@@ -346,20 +186,20 @@ void rasterWireFrameTriangle(SDL_Surface *screen, const triangle &t)
     t_in_screen_space.v2.pos = processVertex(t.v2.pos);
     t_in_screen_space.v3.pos = processVertex(t.v3.pos);
 
-    pretty_print(t);
-    pretty_print(t_in_screen_space);
+    // pretty_print(t);
+    // pretty_print(t_in_screen_space);
     // line 1 v1-v2
 
     // p1 & p2 are in screen space
-    drawLine(screen, t_in_screen_space.v1.pos, t_in_screen_space.v2.pos, 255, 0, 0);
+    drawLine(screen, t_in_screen_space.v1.pos, t_in_screen_space.v2.pos, 255, 255, 0);
 
     // line 2 v1-v3
-    drawLine(screen, t_in_screen_space.v1.pos, t_in_screen_space.v3.pos, 255, 0, 0);
+    drawLine(screen, t_in_screen_space.v1.pos, t_in_screen_space.v3.pos, 255, 255, 0);
 
     // line 3 v2-v3
-    drawLine(screen, t_in_screen_space.v2.pos, t_in_screen_space.v3.pos, 255, 0, 0);
+    drawLine(screen, t_in_screen_space.v2.pos, t_in_screen_space.v3.pos, 255, 255, 0);
 
-    printf("done\n");
+    // printf("done\n");
 }
 
 void pretty_print(triangle t)
@@ -367,4 +207,117 @@ void pretty_print(triangle t)
     fprintf(stdout, "\t\t{%f\t%f\t%f}\n", t.v1.pos.m_x, t.v1.pos.m_y, t.v1.pos.m_z);
     fprintf(stdout, "\t\t{%f\t%f\t%f}\n", t.v2.pos.m_x, t.v2.pos.m_y, t.v2.pos.m_z);
     fprintf(stdout, "\t\t{%f\t%f\t%f}\n\n", t.v3.pos.m_x, t.v3.pos.m_y, t.v3.pos.m_z);
+}
+
+Vector3 processVertex(const Vector3 &vec)
+{
+    // read vertex in model coordinates. Vm
+    // read 3d coord then transform to 4d
+    Vector4 hv(vec, 1.0);
+
+    hv = M_model_screen * hv;
+
+    Vector3 vec_in_screen_coord(hv.m_x / hv.m_w, hv.m_y / hv.m_w, hv.m_z / hv.m_w);
+    return vec_in_screen_coord; // the z-coord will be used for z-buffering later
+}
+void constructWorldMat(Matrix4 &Mw, Vector3 scale, Vector3 translate, double rotate)
+{
+
+    // 2 - transform to world coord
+    //      2.1 - construct the homog. linear trans model-to-world matrix Mw
+    Matrix4 Ms;
+    Ms.col1.m_x = scale.m_x;
+    Ms.col2.m_y = scale.m_y;
+    Ms.col3.m_z = scale.m_z;
+    Matrix4 Mr_y;
+    Mr_y.col1 = Vector4(cos(rotate), 0.0, -sin(rotate), 0.0);
+    Mr_y.col2 = Vector4(0.0, 1.0, 0.0, 0.0);
+    Mr_y.col3 = Vector4(sin(rotate), 0.0, cos(rotate), 0.0);
+    Mr_y.col4 = Vector4(0.0, 0.0, 0.0, 1.0);
+    Matrix4 Mt;
+    Mt.col4 = Vector4(translate, 1.0); // translate in the -ve z direction 50 units
+
+    Mw = Mt * Mr_y * Ms;
+}
+
+void constructCamMat(Matrix4 &Mc, Vector3 eye, Vector3 gazeDir, Vector3 up)
+{
+    // 3 - transform to camera coord
+    //      3.1 - constuct the camera coord sys, u,v,w & e
+
+    Vector3 w = (-gazeDir);
+    w.normalize(); // done
+    Vector3 v = up;
+    v.normalize();
+    Vector3 u = (v ^ w);
+    u.normalize(); // done
+    v = (w ^ u).hat();
+
+    //      3.2 - consturct the world-to-camera matrix Mc
+    Matrix4 Mcam;
+    Matrix4 Mct;
+    Mcam.col1 = Vector4(u.m_x, v.m_x, w.m_x, 0.0);
+    Mcam.col2 = Vector4(u.m_y, v.m_y, w.m_y, 0.0);
+    Mcam.col3 = Vector4(u.m_z, v.m_z, w.m_z, 0.0);
+    Mcam.col4 = Vector4(0.0, 0.0, 0.0, 1.0);
+    Mct.col4 = Vector4(-eye.m_x, -eye.m_x, -eye.m_x, 1.0);
+    Mc = Mc * Mct;
+}
+
+void constructNDCMat(Matrix4 &Mndc, view_volume_bounds vvb, bool prespective)
+{
+
+    // 4 - trasnform to NDC
+    //      4.1 - using orthographic projection , define the orthographic volume (i.e : l,r,t,b,n,f) , but skip clipping for now
+    double l = vvb.l, r = vvb.r;
+    double t = vvb.t, b = vvb.b;
+    double n = vvb.n, f = vvb.f;
+
+    //      4.2 - constuct the ortho.g. matrix Mo (camera-to-NDC): Mo * Mc * Mm * Vm (now in NDC coord)
+    Matrix4 Mo;
+    Mo.col1 = Vector4(2.0 / (r - l), 0.0, 0.0, 0.0);
+    Mo.col2 = Vector4(0.0, 2.0 / (t - b), 0.0, 0.0);
+    Mo.col3 = Vector4(0.0, 0.0, 2.0 / (n - f), 0.0);
+    Mo.col4 = Vector4(-(r + l) / (r - l), -(t + b) / (t - b), -(n + f) / (n - f), 1.0);
+    Matrix4 Mp;
+    Mp.col1 = Vector4(n, 0.0, 0.0, 0.0);
+    Mp.col2 = Vector4(0.0, n, 0.0, 0.0);
+    Mp.col3 = Vector4(0.0, 0.0, (n + f), 1.0);
+    Mp.col4 = Vector4(0, 0, -(f * n), 0.0);
+   
+    if (prespective)
+
+        Mndc = Mo * Mp;
+    else
+        Mndc = Mo;
+}
+
+
+void constructViewPortMat(Matrix4&Mvp,unsigned int winWidth,unsigned int winHeight)
+{
+     // 5 - transform to viewport coord
+    //      5.1 - constuct the NDC-to-viewPort matrix Mv: Mv * Mo * Mc * Mm * Vm (now in pixel coord)
+    Matrix4 Mv;
+    Matrix4 MvFlipV;
+    Mv.col1 = Vector4(winWidth / 2, 0.0, 0.0, 0.0);
+    Mv.col2 = Vector4(0.0, winHeight / 2, 0.0, 0.0);
+    Mv.col4 = Vector4((winWidth - 1) / 2, (winHeight - 1) / 2, 0.0, 1.0);
+    MvFlipV.col2 = Vector4(0.0, -1.0, 0.0, 0.0);
+    Mvp = Mv * MvFlipV;
+    
+}
+
+void init_Model_to_screen_mat()
+{   view_volume_bounds vvbInit;
+    constructWorldMat(Mw,Vector3(1.0),Vector3(0.0,0.0,-120.0),0.0);
+    constructCamMat(Mc,Vector3(0.0),Vector3(0.0,0.0,-1.0),Vector3(1.0,0.0,0.0));
+    constructNDCMat(Mndc,vvbInit,true);
+    constructViewPortMat(Mvp,nPixelsx,nPixelsy);
+    M_model_screen = Mvp*Mndc*Mc*Mw;
+}
+
+
+void update_Model_to_screen_mat()
+{   
+    M_model_screen = Mvp*Mndc*Mc*Mw;
 }
