@@ -2,7 +2,7 @@ CC = g++
 
 LIBS = `pkg-config --libs sdl2`
 INCLUDE = -I./include 
-CFLAGS = -Wall -pedantic `pkg-config --cflags sdl2` -g
+CFLAGS = -Wall -pedantic `pkg-config --cflags sdl2` -ggdb -O0
 
 SRC = ./src/main.cpp \
 	./src/rasterizer.cpp \

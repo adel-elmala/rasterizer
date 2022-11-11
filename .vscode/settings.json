@@ -17,6 +17,7 @@
         }
     ],
     "files.associations": {
-        "objparser.h": "c"
+        "objparser.h": "c",
+        "random": "cpp"
     }
 }

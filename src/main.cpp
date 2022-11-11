@@ -38,22 +38,27 @@ int main(int argc, char *argv[])
     fprintf(stdout, "OBJ PARSER: done\n");
 
     char winTitle[512];
-    winTitle[512] = '\0';
+    winTitle[511] = '\0';
     init_Model_to_screen_mat();
+
+    initZBuffer(nPixelsx, nPixelsy);
     while (!window_should_close)
     {
         // clear screen
         SDL_FillRect(screen, NULL, 0x000000);
         uint32_t sTime = SDL_GetTicks();
-
+        // clear z-buffer
+        clearZBuffer(nPixelsx, nPixelsy);
         // update state, draw the current frame
         processEvents();
 
         for (const auto t : parser.triangles)
         {
             // rasterTriangle(screen,t);
-            rasterWireFrameTriangle(screen, t);
+            // rasterWireFrameTriangle(screen, t);
+            rasterTriangle(screen, t);
         }
+        // rasterSquare(screen);
 
         SDL_UpdateWindowSurface(window);
 
@@ -71,31 +76,36 @@ int main(int argc, char *argv[])
 
 void rasterSquare(SDL_Surface *screen)
 {
-    Vector3 tp1 = Vector3(1.0, 1.0, 0.0);
-    Vector3 tp2 = Vector3(1.0, -1.0, 0.0);
-    Vector3 tp3 = Vector3(-1.0, -1.0, 0.0);
+    Vector3 tp1 = Vector3(1.0, 1.0, 1.0);
+    Vector3 tp2 = Vector3(1.0, -1.0, 1.0);
+    Vector3 tp3 = Vector3(-1.0, -1.0, 1.0);
     triangle t;
     t.v1.pos = tp1;
     t.v2.pos = tp2;
     t.v3.pos = tp3;
     t.v1.col = RGBColor(1.0, 0.0, 0.0);
-    t.v2.col = RGBColor(0.0, 1.0, 0.0);
-    t.v3.col = RGBColor(0, 0.0, 1.0);
+    t.v2.col = RGBColor(1.0, 0.0, 0.0);
+    t.v3.col = RGBColor(1.0, 0.0, 0.0);
 
-    Vector3 t2p1 = Vector3(1.0, 1.0, 0.0);
-    Vector3 t2p2 = Vector3(-1.0, -1.0, 0.0);
-    Vector3 t2p3 = Vector3(-1.0, 1.0, 0.0);
+
+    Vector3 t2p1 = Vector3(1.0, 2.0, 0.0);
+    Vector3 t2p2 = Vector3(1.0, 0.0, 0.0);
+    Vector3 t2p3 = Vector3(-1.0, 0.0, 0.0);
+    
+    // Vector3 t2p1 = Vector3(1.0, 1.0, 1.0);
+    // Vector3 t2p2 = Vector3(-1.0, -1.0, 1.0);
+    // Vector3 t2p3 = Vector3(-1.0, 1.0, 1.0);
     triangle t2;
     t2.v1.pos = t2p1;
     t2.v2.pos = t2p2;
     t2.v3.pos = t2p3;
-    t2.v1.col = RGBColor(1.0, 0.0, 0.0);
-    t2.v2.col = RGBColor(0.0, 0.0, 1.0);
-    t2.v3.col = RGBColor(0, 1.0, 0.0);
+    t2.v1.col = RGBColor(0.0, 1.0, 0.0);
+    t2.v2.col = RGBColor(0.0, 1.0, 0.0);
+    t2.v3.col = RGBColor(0.0, 1.0, 0.0);
     // rasterWireFrameTriangle(screen, t);
     // rasterWireFrameTriangle(screen, t2);
-    rasterTriangle(screen, t);
     rasterTriangle(screen, t2);
+    rasterTriangle(screen, t);
 }
 
 void processEvents()
@@ -143,14 +153,14 @@ void processEvents()
             }
             case SDLK_UP:
             {
-                uniScale+=0.2;
+                uniScale += 0.2;
                 constructWorldMat(Mw, Vector3(uniScale), Vector3(0.0, 0.0, -120), rotate_deg);
                 update_Model_to_screen_mat();
                 break;
             }
             case SDLK_DOWN:
             {
-                uniScale-=0.2;
+                uniScale -= 0.2;
                 constructWorldMat(Mw, Vector3(uniScale), Vector3(0.0, 0.0, -120), rotate_deg);
                 update_Model_to_screen_mat();
                 break;

@@ -18,6 +18,7 @@ struct view_volume_bounds
     double n = -50, f = -250;
 };
 extern Matrix4 Mw, Mc, Mndc, Mvp, M_model_screen;
+extern double *zBuffer ;
 
 void pretty_print(triangle t);
 
@@ -35,4 +36,15 @@ void constructViewPortMat(Matrix4 &Mvp, unsigned int winWidth, unsigned int winH
 void init_Model_to_screen_mat();
 void update_Model_to_screen_mat();
 
+void initZBuffer(unsigned int winWidth, unsigned int winHeight);
+// void clearZBuffer(unsigned int winWidth, unsigned int winHeight);
+
+inline void clearZBuffer(unsigned int winWidth, unsigned int winHeight)
+{
+    double *current = zBuffer;
+    double *pastEnd = zBuffer + (winWidth * winHeight);
+    for (double *pixZ = current; pixZ < pastEnd; ++pixZ)
+
+        *pixZ = -1.0;
+}
 #endif

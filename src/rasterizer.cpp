@@ -1,11 +1,11 @@
 #include "rasterizer.h"
+#include <string.h>
 
 extern bool window_should_close;
 extern int nPixelsx;
 extern int nPixelsy;
-Matrix4 Mw,Mc,Mndc,Mvp,M_model_screen;
-
-
+Matrix4 Mw, Mc, Mndc, Mvp, M_model_screen;
+double *zBuffer = NULL;
 
 void drawPoint(SDL_Surface *screen, const Vector3 &hVec, int r, int g, int b)
 {
@@ -63,7 +63,7 @@ void rasterTriangle(SDL_Surface *screen, const triangle &t)
     {
         for (int x = x_min; x <= x_max; ++x)
         {
-            Vector3 p(x, y, z);
+            Vector3 p(x, y, z); // filled in the z value  -- dummy value
             double alpha = implicit_2d_line_eq(t_in_screen_space.v2.pos, t_in_screen_space.v3.pos, p) / implicit_2d_line_eq(t_in_screen_space.v2.pos, t_in_screen_space.v3.pos, t_in_screen_space.v1.pos);
 
             double beta = implicit_2d_line_eq(t_in_screen_space.v3.pos, t_in_screen_space.v1.pos, p) / implicit_2d_line_eq(t_in_screen_space.v3.pos, t_in_screen_space.v1.pos, t_in_screen_space.v2.pos);
@@ -72,10 +72,21 @@ void rasterTriangle(SDL_Surface *screen, const triangle &t)
 
             if ((alpha >= 0) && (beta >= 0) && (gamma >= 0))
             {
-                RGBColor c = ((RGBColor(t_in_screen_space.v1.col)) * alpha) +
-                             (RGBColor((t_in_screen_space.v2.col)) * beta) +
-                             (RGBColor((t_in_screen_space.v3.col)) * gamma);
-                drawPoint(screen, p, int(c.r * 255), int(c.g * 255), int(c.b * 255));
+                Vector3 tmp = t_in_screen_space.v1.pos * alpha +
+                    t_in_screen_space.v2.pos * beta +
+                    t_in_screen_space.v3.pos * gamma;
+                // // Z-buffer Test
+                double *pZValue = (zBuffer + (((int)p.m_y) * nPixelsx) + (int)p.m_x);
+                if (tmp.m_z >= *pZValue)
+                // if (true)
+                {
+                    *pZValue = p.m_z; // update z Value for that pixel;
+
+                    RGBColor c = ((RGBColor(t_in_screen_space.v1.col)) * alpha) +
+                                 (RGBColor((t_in_screen_space.v2.col)) * beta) +
+                                 (RGBColor((t_in_screen_space.v3.col)) * gamma);
+                    drawPoint(screen, p, int(c.r * 255), int(c.g * 255), int(c.b * 255));
+                }
             }
         }
     }
@@ -262,7 +273,7 @@ void constructNDCMat(Matrix4 &Mndc, view_volume_bounds vvb, bool prespective)
     Mp.col2 = Vector4(0.0, n, 0.0, 0.0);
     Mp.col3 = Vector4(0.0, 0.0, (n + f), 1.0);
     Mp.col4 = Vector4(0, 0, -(f * n), 0.0);
-   
+
     if (prespective)
 
         Mndc = Mo * Mp;
@@ -270,10 +281,9 @@ void constructNDCMat(Matrix4 &Mndc, view_volume_bounds vvb, bool prespective)
         Mndc = Mo;
 }
 
-
-void constructViewPortMat(Matrix4&Mvp,unsigned int winWidth,unsigned int winHeight)
+void constructViewPortMat(Matrix4 &Mvp, unsigned int winWidth, unsigned int winHeight)
 {
-     // 5 - transform to viewport coord
+    // 5 - transform to viewport coord
     //      5.1 - constuct the NDC-to-viewPort matrix Mv: Mv * Mo * Mc * Mm * Vm (now in pixel coord)
     Matrix4 Mv;
     Matrix4 MvFlipV;
@@ -282,20 +292,26 @@ void constructViewPortMat(Matrix4&Mvp,unsigned int winWidth,unsigned int winHeig
     Mv.col4 = Vector4((winWidth - 1) / 2, (winHeight - 1) / 2, 0.0, 1.0);
     MvFlipV.col2 = Vector4(0.0, -1.0, 0.0, 0.0);
     Mvp = Mv * MvFlipV;
-    
 }
 
 void init_Model_to_screen_mat()
-{   view_volume_bounds vvbInit;
-    constructWorldMat(Mw,Vector3(1.0),Vector3(0.0,0.0,-120.0),0.0);
-    constructCamMat(Mc,Vector3(0.0),Vector3(0.0,0.0,-1.0),Vector3(0.0,1.0,0.0));
-    constructNDCMat(Mndc,vvbInit,true);
-    constructViewPortMat(Mvp,nPixelsx,nPixelsy);
-    M_model_screen = Mvp*Mndc*Mc*Mw;
+{
+    view_volume_bounds vvbInit;
+    constructWorldMat(Mw, Vector3(1.0), Vector3(0.0, 0.0, -120.0), 0.0);
+    constructCamMat(Mc, Vector3(0.0), Vector3(0.0, 0.0, -1.0), Vector3(0.0, 1.0, 0.0));
+    constructNDCMat(Mndc, vvbInit, true);
+    constructViewPortMat(Mvp, nPixelsx, nPixelsy);
+    M_model_screen = Mvp * Mndc * Mc * Mw;
 }
 
-
 void update_Model_to_screen_mat()
-{   
-    M_model_screen = Mvp*Mndc*Mc*Mw;
+{
+    M_model_screen = Mvp * Mndc * Mc * Mw;
+}
+
+void initZBuffer(unsigned int winWidth, unsigned int winHeight)
+{
+    unsigned int nBytes = sizeof(double) * winWidth * winHeight;
+    zBuffer = (double *)malloc(nBytes);
+    // clearZBuffer(winWidth, winHeight);
 }
