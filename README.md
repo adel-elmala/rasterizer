@@ -16,13 +16,14 @@ Implementation of a software rasterizer
 
 3. `Left Arrow`: Rotate around y clock-wise
 
-4. `Right Arrow`:Rotate around y Counter-clock-wise
+4. `Right Arrow`: Rotate around y Counter-clock-wise
 
+5. `ESc`: Quit
 
 
 ### TO-DO:
 
-1. Z-buffer
+1. ~~Z-buffer~~ (DONE)
 
 2. Clipping
 

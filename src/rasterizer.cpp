@@ -12,6 +12,8 @@ void drawPoint(SDL_Surface *screen, const Vector3 &hVec, int r, int g, int b)
     // SDL_LockSurface(screen);
     int x = hVec.m_x;
     int y = hVec.m_y;
+    if ((x > nPixelsx) || (y > nPixelsy) || (x < 0) || (y < 0))
+        return; // fix out of bounds memory writes
     unsigned char *data = (unsigned char *)screen->pixels;
     unsigned int bytesPerPix = screen->format->BytesPerPixel;
     unsigned char *targetPixel = data + (y * screen->pitch) + (x * bytesPerPix);
@@ -63,7 +65,11 @@ void rasterTriangle(SDL_Surface *screen, const triangle &t)
     {
         for (int x = x_min; x <= x_max; ++x)
         {
+            if ((x > nPixelsx) || (y > nPixelsy) || (x < 0) || (y < 0))
+                return; // fix out of bounds memory writes
+
             Vector3 p(x, y, z); // filled in the z value  -- dummy value
+
             double alpha = implicit_2d_line_eq(t_in_screen_space.v2.pos, t_in_screen_space.v3.pos, p) / implicit_2d_line_eq(t_in_screen_space.v2.pos, t_in_screen_space.v3.pos, t_in_screen_space.v1.pos);
 
             double beta = implicit_2d_line_eq(t_in_screen_space.v3.pos, t_in_screen_space.v1.pos, p) / implicit_2d_line_eq(t_in_screen_space.v3.pos, t_in_screen_space.v1.pos, t_in_screen_space.v2.pos);
@@ -73,8 +79,9 @@ void rasterTriangle(SDL_Surface *screen, const triangle &t)
             if ((alpha >= 0) && (beta >= 0) && (gamma >= 0))
             {
                 Vector3 tmp = t_in_screen_space.v1.pos * alpha +
-                    t_in_screen_space.v2.pos * beta +
-                    t_in_screen_space.v3.pos * gamma;
+                              t_in_screen_space.v2.pos * beta +
+                              t_in_screen_space.v3.pos * gamma;
+
                 // // Z-buffer Test
                 double *pZValue = (zBuffer + (((int)p.m_y) * nPixelsx) + (int)p.m_x);
                 if (tmp.m_z >= *pZValue)
