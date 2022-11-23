@@ -64,6 +64,17 @@ RGBColor &RGBColor::operator*(double rhs)
     CorrectRange();
     return *this;
 }
+// RGBColor RGBColor::operator*(double rhs)
+// {
+//     RGBColor result;
+//     result.r *= rhs;
+//     result.g *= rhs;
+//     result.b *= rhs;
+//     result.a *= rhs;
+//     result.CorrectRange();
+//     return result;
+// }
+
 
 
 void RGBColor::CorrectRange(void)

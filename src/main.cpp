@@ -4,6 +4,8 @@ bool window_should_close = false;
 int nPixelsx = 640;
 int nPixelsy = 480;
 const double PI = 3.14159265359;
+bool WireFrame = true;
+extern bool Blinn;
 
 void rasterSquare(SDL_Surface *screen);
 void processEvents();
@@ -55,8 +57,10 @@ int main(int argc, char *argv[])
         for (const auto t : parser.triangles)
         {
             // rasterTriangle(screen,t);
-            // rasterWireFrameTriangle(screen, t);
-            rasterTriangle(screen, t);
+            if (WireFrame)
+                rasterWireFrameTriangle(screen, t);
+            else
+                rasterTriangle(screen, t);
         }
         // rasterSquare(screen);
 
@@ -86,15 +90,20 @@ void rasterSquare(SDL_Surface *screen)
     t.v1.col = RGBColor(1.0, 0.0, 0.0);
     t.v2.col = RGBColor(1.0, 0.0, 0.0);
     t.v3.col = RGBColor(1.0, 0.0, 0.0);
+    Vector3 tv1;
+    Vector3 tv2;
 
+    tv1 = t.v2.pos - t.v1.pos;
+    tv2 = t.v3.pos - t.v1.pos;
+    t.tNorm = (tv2 ^ tv1).hat();
 
-    Vector3 t2p1 = Vector3(1.0, 2.0, 0.0);
-    Vector3 t2p2 = Vector3(1.0, 0.0, 0.0);
-    Vector3 t2p3 = Vector3(-1.0, 0.0, 0.0);
-    
-    // Vector3 t2p1 = Vector3(1.0, 1.0, 1.0);
-    // Vector3 t2p2 = Vector3(-1.0, -1.0, 1.0);
-    // Vector3 t2p3 = Vector3(-1.0, 1.0, 1.0);
+    // Vector3 t2p1 = Vector3(1.0, 2.0, 0.0);
+    // Vector3 t2p2 = Vector3(1.0, 0.0, 0.0);
+    // Vector3 t2p3 = Vector3(-1.0, 0.0, 0.0);
+
+    Vector3 t2p1 = Vector3(1.0, 1.0, 1.0);
+    Vector3 t2p2 = Vector3(-1.0, -1.0, 1.0);
+    Vector3 t2p3 = Vector3(-1.0, 1.0, 1.0);
     triangle t2;
     t2.v1.pos = t2p1;
     t2.v2.pos = t2p2;
@@ -102,6 +111,11 @@ void rasterSquare(SDL_Surface *screen)
     t2.v1.col = RGBColor(0.0, 1.0, 0.0);
     t2.v2.col = RGBColor(0.0, 1.0, 0.0);
     t2.v3.col = RGBColor(0.0, 1.0, 0.0);
+
+    tv1 = t2.v2.pos - t2.v1.pos;
+    tv2 = t2.v3.pos - t2.v1.pos;
+    t2.tNorm = (tv2 ^ tv1).hat();
+
     // rasterWireFrameTriangle(screen, t);
     // rasterWireFrameTriangle(screen, t2);
     rasterTriangle(screen, t2);
@@ -163,6 +177,16 @@ void processEvents()
                 uniScale -= 0.2;
                 constructWorldMat(Mw, Vector3(uniScale), Vector3(0.0, 0.0, -120), rotate_deg);
                 update_Model_to_screen_mat();
+                break;
+            }
+            case SDLK_w: // wireFrame / surfaceShading
+            {
+                WireFrame = !WireFrame;
+                break;
+            }
+            case SDLK_s: // Blinn / gooch
+            {
+                Blinn = !Blinn;
                 break;
             }
             // case SDLK_w:

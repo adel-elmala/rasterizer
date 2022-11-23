@@ -1,5 +1,5 @@
 #include "objParser.h"
-
+#include <iostream>
 
 void objParser::ReadFile(const char *pathname)
 {
@@ -62,7 +62,7 @@ char *objParser::processVLine(char *lineStart)
 char *objParser::processVnLine(char *lineStart)
 {
     float norm[3];
-    Normal n;
+    Vector3 n;
     assert(*lineStart == 'v' && (*(++(lineStart))) == 'n');
     lineStart++;
     char *tokenStart = lineStart;
@@ -145,6 +145,14 @@ objParser::objParser(const char *filePath)
         peek = current;
     }
     formTriangles();
+    fprintf(stdout, "n Verticies: %u\n", nVerts);
+    fprintf(stdout, "n Normals: %u\n", nNorms);
+    fprintf(stdout, "n Triangles: %u\n", nFaces);
+
+    std::cout << "=========== " << std::endl;
+    std::cout << "n Verticies: " << verticies.size() << std::endl;
+    std::cout << "n Normals: " << normals.size() << std::endl;
+    std::cout << "n Triangles: " << triangles.size() << std::endl;
 }
 
 objParser::~objParser()
@@ -154,25 +162,40 @@ objParser::~objParser()
 
 void objParser::formTriangles(void)
 {
+    Vector3 tv1;
+    Vector3 tv2;
     for (auto face : FaceIdx)
     {
         triangle t;
         t.v1.pos = Vector3(verticies[(face.v1) - 1].x,
                            verticies[(face.v1) - 1].y,
                            verticies[(face.v1) - 1].z);
-        t.v1.col = RGBColor(0.4f, 0.3f, 0.1f);
-
+        t.v1.col = RGBColor(1.0f, 0.0f, 0.0f);
 
         t.v2.pos = Vector3(verticies[(face.v2) - 1].x,
                            verticies[(face.v2) - 1].y,
                            verticies[(face.v2) - 1].z);
-        t.v2.col = RGBColor(0.1f, 0.9f, 0.4f);
-
+        t.v2.col = RGBColor(1.0f, 0.0f, 0.0f);
 
         t.v3.pos = Vector3(verticies[(face.v3) - 1].x,
                            verticies[(face.v3) - 1].y,
                            verticies[(face.v3) - 1].z);
-        t.v3.col = RGBColor(0.7f, 0.7f, 0.8f);
+        t.v3.col = RGBColor(1.0f, 0.0f, 0.0f);
+        if (normals.size() == verticies.size())
+        {
+            t.nNorms = 3 ;
+            t.tNorm = normals[(face.v1) - 1];
+            t.tNorm = normals[(face.v2) - 1];
+            t.tNorm = normals[(face.v3) - 1];
+        }
+        else 
+        {
+            t.nNorms = 1 ;
+            tv1 = t.v2.pos - t.v1.pos;
+            tv2 = t.v3.pos - t.v1.pos;
+            t.tNorm = (tv2 ^ tv1).hat();
+        }
+        // t.tNorm.prettyPrint();
         triangles.push_back(t);
     }
 }

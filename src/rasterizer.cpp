@@ -4,8 +4,19 @@
 extern bool window_should_close;
 extern int nPixelsx;
 extern int nPixelsy;
-Matrix4 Mw, Mc, Mndc, Mvp, M_model_screen;
+Matrix4 Mw, Mc, Mndc, Mvp, M_model_screen, MwNorm;
 double *zBuffer = NULL;
+Vector3 lookAt(0.0, 0.0, -1.0);
+
+struct DirectionalLight
+{
+    Vector3 lightDir = {-1.0f, -1.0f, 1.0f};
+    RGBColor lightColor = {1.0f, 1.0f, 1.0f};
+    double intensity = 5;
+};
+
+DirectionalLight lightSource;
+bool Blinn = true;
 
 void drawPoint(SDL_Surface *screen, const Vector3 &hVec, int r, int g, int b)
 {
@@ -34,6 +45,43 @@ double implicit_2d_line_eq(const Vector3 &p1, const Vector3 &p2, const Vector3 &
 {
     return ((p1.m_y - p2.m_y) * v.m_x + (p2.m_x - p1.m_x) * v.m_y + (p1.m_x * p2.m_y) - (p2.m_x * p1.m_y));
 }
+
+RGBColor Blinn_Phong_shadeVertex(Vector3 faceNormal, RGBColor vertexColor)
+{
+    RGBColor colSpec = RGBColor(0.5, 0.5, 0.5);
+    double n_dot_l = faceNormal * (lightSource.lightDir);
+    Vector3 r = (2 * n_dot_l * faceNormal) - (lightSource.lightDir);
+    Vector3 h = (r + (-lookAt)) / (r + (-lookAt)).len();
+    return (RGBColor(vertexColor) * 0.5) +
+           (RGBColor(vertexColor) * (lightSource.intensity * std::max(0.0, n_dot_l))) +
+           (colSpec * (lightSource.intensity * std::pow(std::max(0.0, faceNormal * h), 1000)));
+}
+
+RGBColor Gooch_shadeVertex(Vector3 faceNormal, RGBColor vertexColor)
+{
+    RGBColor colCool = RGBColor(0.0, 0.0, 0.55) + (RGBColor(vertexColor) * 0.25);
+    RGBColor colWarm = RGBColor(0.3, 0.3, 0.0) + (RGBColor(vertexColor) * 0.25);
+    RGBColor colHighlight = RGBColor(1.0, 1.0, 1.0);
+    double n_dot_l = faceNormal * (lightSource.lightDir);
+    // double t = std::max(0.0, n_dot_l);
+    double t = (n_dot_l + 1.0) / 2.0;
+    Vector3 r = (faceNormal * 2 * n_dot_l) - (lightSource.lightDir);
+    // double s = std::max(0.0, r * lookAt);
+    double s = std::max(0.0, 100 * (r * (-lookAt)) - 97);
+    return colHighlight * s + ((colWarm * t + colCool * (1.0 - t)) * (1.0 - s));
+}
+RGBColor shadeVertex(Vector3 faceNormal, RGBColor vertexColor, ShadeMode mode = BLINN_PHONG)
+{
+    switch (mode)
+    {
+    case GOOCH:
+        return Gooch_shadeVertex(faceNormal, vertexColor);
+
+    default:
+        return Blinn_Phong_shadeVertex(faceNormal, vertexColor);
+    }
+}
+
 // t is in model coord.
 void rasterTriangle(SDL_Surface *screen, const triangle &t)
 {
@@ -87,7 +135,37 @@ void rasterTriangle(SDL_Surface *screen, const triangle &t)
                 if (tmp.m_z >= *pZValue)
                 // if (true)
                 {
+                    ShadeMode sm;
+                    if(Blinn)
+                        sm = BLINN_PHONG;
+                    else
+                        sm = GOOCH;
                     *pZValue = p.m_z; // update z Value for that pixel;
+                    if (t.nNorms == 3)
+                    {
+
+                        Vector4 tnh1 = (MwNorm * Vector4(t.tNorm, 0)).hat();
+                        Vector4 tnh2 = (MwNorm * Vector4(t.tNorm2, 0)).hat();
+                        Vector4 tnh3 = (MwNorm * Vector4(t.tNorm3, 0)).hat();
+                        
+                        Vector3 tn1(tnh1.m_x, tnh1.m_y, tnh1.m_z); // vertex Normal
+                        Vector3 tn2(tnh2.m_x, tnh2.m_y, tnh2.m_z); // vertex Normal
+                        Vector3 tn3(tnh3.m_x, tnh3.m_y, tnh3.m_z); // vertex Normal
+
+                        t_in_screen_space.v1.col = shadeVertex(tn1, t.v1.col,sm);
+                        t_in_screen_space.v2.col = shadeVertex(tn2, t.v2.col,sm);
+                        t_in_screen_space.v3.col = shadeVertex(tn3, t.v3.col,sm);
+                    }
+                    else
+                    {
+
+                        Vector4 tn4 = (MwNorm * Vector4(t.tNorm, 0)).hat();
+                        Vector3 tn3(tn4.m_x, tn4.m_y, tn4.m_z); // face Normal
+
+                        t_in_screen_space.v1.col = shadeVertex(tn3, t.v1.col,sm);
+                        t_in_screen_space.v2.col = shadeVertex(tn3, t.v2.col,sm);
+                        t_in_screen_space.v3.col = shadeVertex(tn3, t.v3.col,sm);
+                    }
 
                     RGBColor c = ((RGBColor(t_in_screen_space.v1.col)) * alpha) +
                                  (RGBColor((t_in_screen_space.v2.col)) * beta) +
@@ -234,6 +312,7 @@ void constructWorldMat(Matrix4 &Mw, Vector3 scale, Vector3 translate, double rot
     Mt.col4 = Vector4(translate, 1.0); // translate in the -ve z direction 50 units
 
     Mw = Mt * Mr_y * Ms;
+    MwNorm = Mw.inverse();
 }
 
 void constructCamMat(Matrix4 &Mc, Vector3 eye, Vector3 gazeDir, Vector3 up)
@@ -305,7 +384,7 @@ void init_Model_to_screen_mat()
 {
     view_volume_bounds vvbInit;
     constructWorldMat(Mw, Vector3(1.0), Vector3(0.0, 0.0, -120.0), 0.0);
-    constructCamMat(Mc, Vector3(0.0), Vector3(0.0, 0.0, -1.0), Vector3(0.0, 1.0, 0.0));
+    constructCamMat(Mc, Vector3(0.0), lookAt, Vector3(0.0, 1.0, 0.0));
     constructNDCMat(Mndc, vvbInit, true);
     constructViewPortMat(Mvp, nPixelsx, nPixelsy);
     M_model_screen = Mvp * Mndc * Mc * Mw;

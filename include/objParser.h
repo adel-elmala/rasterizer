@@ -33,6 +33,10 @@ struct triangle
     vertexAttrib v1;
     vertexAttrib v2;
     vertexAttrib v3;
+    Vector3 tNorm;
+    Vector3 tNorm2;
+    Vector3 tNorm3;
+    int nNorms;
 };
 
 class objParser
@@ -44,7 +48,7 @@ public:
     char *fileBuffer;
     unsigned long fileSizeBytes;
     std::vector<Vertex> verticies;
-    std::vector<Normal> normals;
+    std::vector<Vector3> normals;
     std::vector<FaceIndicies> FaceIdx;
     std::vector<triangle> triangles;
 

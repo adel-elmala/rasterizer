@@ -18,7 +18,13 @@ Implementation of a software rasterizer
 
 4. `Right Arrow`: Rotate around y Counter-clock-wise
 
-5. `ESc`: Quit
+5. `w`: toggle between wireFrame / surface shading 
+
+6. `s`: toggle between Blinn-Phong / Gooch shading
+
+7. `ESc`: Quit
+
+
 
 
 ### TO-DO:
@@ -29,4 +35,4 @@ Implementation of a software rasterizer
 
 3. Textures
 
-4. Shading
+4. ~~Shading~~ (DONE)

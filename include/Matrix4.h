@@ -21,6 +21,8 @@ public:
     double &operator()(const unsigned int row, const unsigned int col);
     Matrix4 identity();
     Matrix4 transpose();
+    Matrix4 inverse();
+    Matrix4 transformNormal();
     void prettyPrint();
 };
 
