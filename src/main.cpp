@@ -41,9 +41,10 @@ int main(int argc, char *argv[])
 
     char winTitle[512];
     winTitle[511] = '\0';
-    init_Model_to_screen_mat();
 
+    init_Model_to_screen_mat();
     initZBuffer(nPixelsx, nPixelsy);
+
     while (!window_should_close)
     {
         // clear screen
@@ -56,7 +57,6 @@ int main(int argc, char *argv[])
 
         for (const auto t : parser.triangles)
         {
-            // rasterTriangle(screen,t);
             if (WireFrame)
                 rasterWireFrameTriangle(screen, t);
             else

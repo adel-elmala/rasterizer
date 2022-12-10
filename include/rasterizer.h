@@ -17,8 +17,8 @@ struct view_volume_bounds
     double t = 100, b = -100;
     double n = -50, f = -250;
 };
-extern Matrix4 Mw, Mc, Mndc, Mvp, M_model_screen,MwNrom;
-extern double *zBuffer ;
+extern Matrix4 Mw, Mc, Mndc, Mvp, M_model_screen, MwNrom;
+extern double *zBuffer;
 
 enum ShadeMode
 {
@@ -44,11 +44,10 @@ void update_Model_to_screen_mat();
 void initZBuffer(unsigned int winWidth, unsigned int winHeight);
 // void clearZBuffer(unsigned int winWidth, unsigned int winHeight);
 
-RGBColor shadeVertex(Vector3 faceNormal, RGBColor vertexColor,ShadeMode modeId);
+RGBColor shadeVertex(Vector3 faceNormal, RGBColor vertexColor, ShadeMode modeId);
 RGBColor Blinn_Phong_shadeVertex(Vector3 faceNormal, RGBColor vertexColor);
 
 RGBColor Gooch_shadeVertex(Vector3 faceNormal, RGBColor vertexColor);
-
 
 inline void clearZBuffer(unsigned int winWidth, unsigned int winHeight)
 {
